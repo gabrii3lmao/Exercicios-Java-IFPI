@@ -115,7 +115,7 @@ Métodos
 
 ---
 
-### [ ] ItemPedido
+### [X] ItemPedido
 
 ```text
 Atributos
@@ -130,7 +130,7 @@ Métodos
 
 ---
 
-### [ ] Pedido
+### [X]Pedido
 
 ```text
 Atributos
