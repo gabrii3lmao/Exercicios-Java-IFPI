@@ -4,7 +4,7 @@ Implementar um programa no terminal que vai gerenciar uma loja online.
 
 ## Entidades a implementar
 
-### [ ] Usuário
+### [X] Usuário
 
 ```text
 Atributos
@@ -21,7 +21,7 @@ Métodos
 
 ---
 
-### [ ] Administrador > Usuário
+### [X] Administrador > Usuário
 
 ```text
 Atributos
@@ -36,7 +36,7 @@ Métodos
 
 ---
 
-### [ ] Cliente > Usuário
+### [X] Cliente > Usuário
 
 ```text
 Atributos
@@ -52,7 +52,7 @@ Métodos
 
 ---
 
-### [ ] Produto (abstrata)
+### [X] Produto (abstrata)
 
 ```text
 Atributos
@@ -68,7 +68,7 @@ Métodos
 
 ---
 
-### [ ] Produto Digital > Produto
+### [X] Produto Digital > Produto
 
 ```text
 Atributos
@@ -93,7 +93,7 @@ Métodos
 
 ---
 
-### [ ] Produto Físico > Produto
+### [X] Produto Físico > Produto
 
 ```text
 Atributos
@@ -158,7 +158,7 @@ Métodos
 
 ---
 
-### [ ] Pagamento (interface)
+### [X] Pagamento (interface)
 
 ```text
 Métodos
@@ -167,7 +167,7 @@ Métodos
 
 ---
 
-### [ ] Boleto > Pagamento
+### [X] Boleto > Pagamento
 
 ```text
 Atributos
