@@ -208,19 +208,3 @@ Todas estão em `src/main/java/dao/*.java` — nenhuma usa SQL nativo:
 | Histórico do cliente | mesma consulta acima + `where p.cliente.id = :clienteId` |
 
 ---
-
-## 7. Como executar
-
-```bash
-# 1) sobe o MySQL
-docker compose up -d
-
-# 2) compila (o Hibernate cria as tabelas na primeira execução)
-mvn compile
-
-# 3) roda a aplicação
-mvn exec:java
-```
-
-Login inicial do administrador: `admin@loja.com` / `123` (cadastrado pelo seed
-apenas se o banco estiver vazio).
