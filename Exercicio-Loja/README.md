@@ -192,3 +192,50 @@ Métodos
 - Um `Pedido` possui uma estratégia de `Pagamento`.
 - `Boleto` implementa a interface `Pagamento`.
 - O `Administrador` é responsável por cadastrar e remover produtos e visualizar os pedidos do sistema.
+
+---
+
+## Persistência — JPA + Hibernate + MySQL
+
+O programa agora guarda tudo em um banco **MySQL** (roda em container Docker/Podman),
+usando **JPA (Jakarta Persistence)** com o provedor **Hibernate**.
+
+- **Nenhum SQL puro no projeto**: o schema é criado e atualizado pelo Hibernate a
+  partir das anotações JPA (`hibernate.hbm2ddl.auto=update`) e todas as consultas
+  são **JPQL**, feitas pelos DAOs em `src/main/java/dao/`.
+- Documentação completa do mapeamento (diagrama ER, tabelas, colunas e
+  cardinalidades): [`docs/mapeamento-banco.md`](docs/mapeamento-banco.md).
+- Única mudança de modelagem: `Pagamento`, que era `interface`, virou **classe
+  abstrata `@Entity`** para poder ser persistida (o contrato
+  `processarPagamento(valor)` continua igual).
+
+### Estrutura
+
+```text
+src/main/java/
+├── App.java                  # menu do terminal (usa os DAOs)
+├── Entities/                 # entidades JPA (mapeadas)
+├── dao/                      # acesso a dados (JPQL, sem SQL)
+└── util/JPAUtil.java         # EntityManagerFactory
+src/main/resources/
+├── META-INF/persistence.xml  # conexao + propriedades do Hibernate
+docs/mapeamento-banco.md      # mapeamento banco <-> classes
+```
+
+### Como executar
+
+```bash
+# 1) banco MySQL (imagem docker.io/library/mysql:8.4)
+docker compose up -d          # ou: podman-compose up -d
+
+# 2) compilar (o Hibernate cria as tabelas na 1a execução)
+mvn compile
+
+# 3) rodar
+mvn exec:java
+```
+
+> O Maven pode ser instalado com `sudo dnf install maven`.
+
+**Login inicial do administrador:** `admin@loja.com` / `123`
+(o seed roda só se o banco estiver vazio). Clientes se cadastram pelo próprio menu.
