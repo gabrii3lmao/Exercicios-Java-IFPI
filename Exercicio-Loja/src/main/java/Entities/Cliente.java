@@ -3,10 +3,11 @@ package Entities;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
@@ -14,18 +15,32 @@ import jakarta.persistence.Table;
  * Cliente da loja.
  *
  * Mapeamento: heranca JOINED -> herda a chave primaria de "usuarios"
- * e guarda o endereco na tabela "clientes".
+ * e guarda apenas os dados proprios na tabela "clientes".
  *
- * O historico de pedidos e a metade "one" da relacao Cliente 1 - N Pedido
- * (o lado "many" com a chave estrangeira fica em Pedido.cliente).
+ * Relacoes:
+ *  - Cliente 1 - 1 Endereco: o lado inverso, aqui, com mappedBy (a chave
+ *    estrangeira unica "cliente_id" fica em Endereco.cliente). O cascade faz
+ *    o endereco ser persistido/atualizado junto do cliente.
+ *  - Cliente 1 - N Pedido: o historico e a metade "one" da relacao
+ *    (o lado "many" com a chave estrangeira fica em Pedido.cliente).
  */
 @Entity
 @Table(name = "clientes")
 @PrimaryKeyJoinColumn(name = "id")
 public class Cliente extends Usuario {
 
-    @Column(name = "endereco", length = 200)
-    private String endereco;
+    /**
+     * Lado inverso da relacao 1 - 1 (o dono e Endereco.cliente).
+     * EAGER + cascade para que o endereco continue utilizavel apos o
+     * EntityManager ser fechado e seja salvo junto do cliente.
+     */
+    @OneToOne(
+        mappedBy = "cliente",
+        fetch = FetchType.EAGER,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private Endereco endereco;
 
     /**
      * EAGER para que a lista carregada continue utilizavel apos o
@@ -39,18 +54,27 @@ public class Cliente extends Usuario {
         this.historicoPedidos = new ArrayList<>();
     }
 
-    public Cliente(String nome, String email, String senha, String endereco) {
+    public Cliente(String nome, String email, String senha, Endereco endereco) {
         super(nome, email, senha);
-        this.endereco = endereco;
         this.historicoPedidos = new ArrayList<>();
+        setEndereco(endereco);
     }
 
-    public String getEndereco() {
+    public Endereco getEndereco() {
         return endereco;
     }
 
-    public void setEndereco(String endereco) {
+    /** Mantem as duas pontas da relacao 1 - 1 consistentes. */
+    public void setEndereco(Endereco endereco) {
         this.endereco = endereco;
+        if (endereco != null) {
+            endereco.setCliente(this);
+        }
+    }
+
+    /** Endereco em uma unica linha; null se o cliente ainda nao tiver um. */
+    public String getEnderecoDescricao() {
+        return endereco == null ? null : endereco.getDescricao();
     }
 
     public void adicionarPedido(Pedido pedido) {

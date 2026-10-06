@@ -174,6 +174,9 @@ public class App {
             }
             cliente = existente;
             System.out.println("Bem-vindo(a), " + cliente.getNome() + "!");
+            if (cliente.getEndereco() != null) {
+                System.out.println("Endereco cadastrado: " + cliente.getEnderecoDescricao());
+            }
         } else if (usuario != null) {
             System.out.println("Esse email pertence a um administrador.");
             return;
@@ -183,9 +186,7 @@ public class App {
             String nome = scanner.nextLine();
             System.out.print("Senha: ");
             String senha = scanner.nextLine();
-            System.out.print("Endereco: ");
-            String endereco = scanner.nextLine();
-            cliente = new Cliente(nome, email, senha, endereco);
+            cliente = new Cliente(nome, email, senha, lerEndereco());
             usuarioDao.salvar(cliente);
             System.out.println("Cadastro realizado com sucesso!");
         }
@@ -210,6 +211,28 @@ public class App {
                 default -> System.out.println("Opcao invalida!");
             }
         } while (opcao != 4);
+    }
+
+    /** Le os campos do endereco e monta o objeto Endereco (relacao 1 - 1). */
+    private static Endereco lerEndereco() {
+        System.out.print("Logradouro (rua/avenida): ");
+        String logradouro = scanner.nextLine();
+        System.out.print("Numero: ");
+        String numero = scanner.nextLine();
+        System.out.print("Complemento (vazio se nao houver): ");
+        String complemento = scanner.nextLine();
+        System.out.print("Bairro: ");
+        String bairro = scanner.nextLine();
+        System.out.print("Cidade: ");
+        String cidade = scanner.nextLine();
+        System.out.print("UF: ");
+        String uf = scanner.nextLine();
+        System.out.print("CEP: ");
+        String cep = scanner.nextLine();
+
+        Endereco endereco = new Endereco(logradouro, numero, bairro, cidade, uf, cep);
+        endereco.setComplemento(complemento);
+        return endereco;
     }
 
     private static void fazerPedido(Cliente cliente) {

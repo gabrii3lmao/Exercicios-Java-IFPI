@@ -30,6 +30,7 @@ usando JPA (Jakarta Persistence) + Hibernate.
 erDiagram
     USUARIOS ||--|| ADMINISTRADORES : "heranca JOINED"
     USUARIOS ||--|| CLIENTES : "heranca JOINED"
+    CLIENTES ||--|| ENDERECOS : "1 - 1 (FK unica em enderecos)"
     CLIENTES ||--o{ PEDIDOS : "possui historico"
     PEDIDOS ||--|{ ITENS_PEDIDO : "e composto por"
     PRODUTOS ||--o{ ITENS_PEDIDO : "referenciado por"
@@ -46,7 +47,17 @@ erDiagram
     }
     CLIENTES {
         int id PK "FK -> usuarios.id"
-        varchar endereco
+    }
+    ENDERECOS {
+        int id PK
+        varchar logradouro
+        varchar numero
+        varchar complemento
+        varchar bairro
+        varchar cidade
+        varchar uf
+        varchar cep
+        int cliente_id FK "UNIQUE -> clientes.id"
     }
     PRODUTOS {
         int id PK
@@ -88,6 +99,7 @@ erDiagram
 | `Entities.Usuario` | `@Entity` + `@Table(name="usuarios")` | `usuarios` | — (raiz) |
 | `Entities.Administrador` | `@Entity` + `@Table(name="administradores")` + `@PrimaryKeyJoinColumn(name="id")` | `administradores` | **JOINED** |
 | `Entities.Cliente` | `@Entity` + `@Table(name="clientes")` + `@PrimaryKeyJoinColumn(name="id")` | `clientes` | **JOINED** |
+| `Entities.Endereco` | `@Entity` + `@Table(name="enderecos")` | `enderecos` | — |
 | `Entities.Interfaces.Produto` (abstrata) | `@Entity` + `@Table(name="produtos")` + `@DiscriminatorColumn(name="tipo")` | `produtos` | **SINGLE_TABLE** |
 | `Entities.ProdutoDigital` | `@DiscriminatorValue("DIGITAL")` | `produtos` (mesma tabela) | SINGLE_TABLE |
 | `Entities.ProdutoFisico` | `@DiscriminatorValue("FISICO")` | `produtos` (mesma tabela) | SINGLE_TABLE |
@@ -98,8 +110,8 @@ erDiagram
 
 ### Por que cada estratégia?
 
-- **JOINED em `Usuario`**: `Administrador` e `Cliente` têm campos próprios
-  (`endereço` só existe em `Cliente`). Cada subclasse ganha sua própria tabela,
+- **JOINED em `Usuario`**: `Administrador` e `Cliente` têm dados próprios
+  (o `Endereco` só existe para `Cliente`). Cada subclasse ganha sua própria tabela,
   ligada à `usuarios` pela mesma chave primária — sem colunas nulas.
 - **SINGLE_TABLE em `Produto`**: as duas subclasses só acrescentam poucas
   colunas (`url_download`/`tamanho_arquivo_mb` ou `peso`), que ficam `NULL`
@@ -120,8 +132,22 @@ erDiagram
 | `Usuario.nome` | `nome` | texto (120), obrigatório | `@Column(nullable=false, length=120)` |
 | `Usuario.email` | `email` | texto (120), obrigatório, **único** | `@UniqueConstraint("uk_usuario_email")` |
 | `Usuario.senha` | `senha` | texto (60), obrigatório | `@Column(nullable=false, length=60)` |
-| `Cliente.endereco` | `endereco` | texto (200) | `@Column(length=200)` |
+| `Cliente.endereco` | *(relação)* | — | `@OneToOne(mappedBy="cliente", cascade=ALL, orphanRemoval=true)` — a coluna fica em `enderecos.cliente_id` |
 | `Administrador` | — | sem campos próprios | apenas PK compartilhada |
+
+### `enderecos`
+
+| Atributo | Coluna | Tipo lógico | Regra |
+|---|---|---|---|
+| `Endereco.id` | `id` | inteiro, PK, auto-incremento | `@Id @GeneratedValue(IDENTITY)` |
+| `Endereco.cliente` | `cliente_id` | inteiro, FK → `clientes.id`, obrigatória, **única** | `@OneToOne @JoinColumn(nullable=false, unique=true)` — **lado dono** da relação 1 – 1 |
+| `Endereco.logradouro` | `logradouro` | texto (150), obrigatório | `@Column(nullable=false, length=150)` |
+| `Endereco.numero` | `numero` | texto (20) | `@Column(length=20)` |
+| `Endereco.complemento` | `complemento` | texto (100) | `@Column(length=100)` |
+| `Endereco.bairro` | `bairro` | texto (80) | `@Column(length=80)` |
+| `Endereco.cidade` | `cidade` | texto (80), obrigatório | `@Column(nullable=false, length=80)` |
+| `Endereco.uf` | `uf` | texto (2) | `@Column(length=2)` |
+| `Endereco.cep` | `cep` | texto (10) | `@Column(length=10)` |
 
 ### `produtos` (herança SINGLE_TABLE)
 
@@ -173,6 +199,7 @@ erDiagram
 |---|---|---|---|
 | `Usuario` → `Administrador` | 1–1 (herança) | `@Inheritance(JOINED)` + `@PrimaryKeyJoinColumn` | `administradores.id` |
 | `Usuario` → `Cliente` | 1–1 (herança) | `@Inheritance(JOINED)` + `@PrimaryKeyJoinColumn` | `clientes.id` |
+| `Cliente` ↔ `Endereco` | 1 – 1 | lado *dono*: `Endereco.cliente` `@OneToOne @JoinColumn(unique)`; lado inverso: `Cliente.endereco` `@OneToOne(mappedBy="cliente", cascade=ALL, orphanRemoval=true, EAGER)` | `enderecos.cliente_id` |
 | `Produto` → `ProdutoDigital` / `ProdutoFisico` | 1–1 (herança) | `@Inheritance(SINGLE_TABLE)` + `@DiscriminatorValue` | — (coluna `tipo`) |
 | `Cliente` ↔ `Pedido` | 1 – N | lado *one*: `Cliente.historicoPedidos` `@OneToMany(mappedBy="cliente", EAGER)`; lado *many*: `Pedido.cliente` `@ManyToOne` | `pedidos.cliente_id` |
 | `Pedido` ↔ `ItemPedido` | 1 – N | lado *one*: `Pedido.itens` `@OneToMany(mappedBy, cascade=ALL, orphanRemoval=true)`; lado *many*: `ItemPedido.pedido` `@ManyToOne` | `itens_pedido.pedido_id` |
@@ -181,6 +208,16 @@ erDiagram
 
 Notas:
 
+- **Bidirecional** em `Cliente ↔ Endereco`: o lado com a chave estrangeira é o
+  dono (`Endereco.cliente`, coluna `cliente_id` **única** — é essa unicidade que
+  garante a cardinalidade 1 – 1), e `Cliente.endereco` usa `mappedBy`.
+  `Cliente.setEndereco()` sincroniza a outra ponta (`endereco.setCliente(this)`).
+- `cascade = ALL` + `orphanRemoval = true` em `Cliente.endereco`: salvar o
+  cliente salva o endereço junto (e o Hibernate ordena os `insert` respeitando a
+  FK), e trocar o endereço apaga o registro antigo.
+- **Coluna legada**: o Hibernate (`hbm2ddl.auto = update`) **não remove** colunas
+  antigas — se o banco já existir, a antiga `clientes.endereco` continua lá sem
+  ser usada e pode ser descartada manualmente (`alter table clientes drop column endereco`).
 - **Bidirecional** em `Cliente ↔ Pedido` e `Pedido ↔ ItemPedido`: o lado com a
   chave estrangereira é o dono da relação (`@ManyToOne`), o outro usa
   `mappedBy`. O `Pedido` sincroniza a outra ponta no próprio construtor

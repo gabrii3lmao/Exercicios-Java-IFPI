@@ -1,241 +1,86 @@
-# Trabalho Loja Online
+# Loja Online — Quickstart
 
-Implementar um programa no terminal que vai gerenciar uma loja online.
+Programa de terminal que gerencia uma loja online (clientes, produtos, pedidos e
+pagamentos), com persistência em **MySQL** via **JPA/Hibernate** e **Maven**.
 
-## Entidades a implementar
-
-### [X] Usuário
-
-```text
-Atributos
-- nome: string
-- email: string
-- senha: string
-
-Métodos
-- Usuario(nome: string, email: string, senha: string)
-- getNome(): string
-- getEmail(): string
-- getSenha(): string
-```
+Este guia mostra, do zero, como rodar o projeto na sua máquina.
 
 ---
 
-### [X] Administrador > Usuário
+## 1. Pré-requisitos
 
-```text
-Atributos
-(nenhum)
-
-Métodos
-- Administrador(nome: string, email: string, senha: string)
-- adicionarProduto(produto: Produto): void
-- removerProduto(produto: Produto): void
-- visualizarPedidos(): void
-```
+| Ferramenta | Versão mínima | Como verificar |
+| --- | --- | --- |
+| JDK | 21 | `java -version` |
+| Maven | 3.8+ | `mvn -v` |
+| Docker (ou Podman) | qualquer | `docker -v` |
 
 ---
 
-### [X] Cliente > Usuário
+## 2. Subir o banco de dados
 
-```text
-Atributos
-- endereco: string
-- historicoPedidos: List<Pedido>
-
-Métodos
-- Cliente(nome: string, email: string, senha: string, endereco: string)
-- getEndereco(): string
-- adicionarPedido(pedido: Pedido): void
-- getHistoricoPedidos(): List<Pedido>
-```
-
----
-
-### [X] Produto (abstrata)
-
-```text
-Atributos
-- nome: string
-- preco: double
-- descricao: string
-
-Métodos
-- getNome(): string
-- getPreco(): double
-- getDescricao(): string
-```
-
----
-
-### [X] Produto Digital > Produto
-
-```text
-Atributos
-- urlDownload: string
-- tamanhoArquivoMB: int
-
-Métodos
-- ProdutoDigital(
-    nome: string,
-    preco: double,
-    descricao: string,
-    urlDownload: string,
-    tamanhoArquivoMB: int
-  )
-
-- getNome(): string
-- getPreco(): double
-- getDescricao(): string
-- getUrlDownload(): string
-- getTamanhoArquivoMB(): int
-```
-
----
-
-### [X] Produto Físico > Produto
-
-```text
-Atributos
-- peso: double
-
-Métodos
-- ProdutoFisico(
-    nome: string,
-    preco: double,
-    descricao: string,
-    peso: double
-  )
-
-- getNome(): string
-- getPreco(): double
-- getDescricao(): string
-- getPeso(): double
-```
-
----
-
-### [X] ItemPedido
-
-```text
-Atributos
-- quantidade: int
-
-Métodos
-- ItemPedido(produto: Produto, quantidade: int)
-- getSubtotal(): double
-- getQuantidade(): int
-- getProduto(): Produto
-```
-
----
-
-### [X]Pedido
-
-```text
-Atributos
-- numeroPedido: int
-- status: string
-- data: Date
-- itens: List<ItemPedido>
-- pagamento: Pagamento
-
-Métodos
-- Pedido(
-    numeroPedido: int,
-    itens: List<ItemPedido>,
-    pagamento: Pagamento
-  )
-
-- calcularTotal(): double
-- processarPagamento(): void
-- getNumeroPedido(): int
-- getData(): Date
-- getStatus(): string
-- getItens(): List<ItemPedido>
-- getPagamento(): Pagamento
-```
-
----
-
-### [X] Pagamento (interface)
-
-```text
-Métodos
-- processarPagamento(valor: double): boolean
-```
-
----
-
-### [X] Boleto > Pagamento
-
-```text
-Atributos
-- codigoBarras: string
-
-Métodos
-- Boleto(codigoBarras: string)
-- processarPagamento(valor: double): boolean
-```
-
----
-
-## Relacionamentos
-
-- `Administrador` herda de `Usuário`.
-- `Cliente` herda de `Usuário`.
-- `ProdutoDigital` herda de `Produto`.
-- `ProdutoFisico` herda de `Produto`.
-- Um `Cliente` possui um histórico de `Pedido`.
-- Um `Pedido` é composto por vários `ItemPedido`.
-- Cada `ItemPedido` referencia exatamente um `Produto`.
-- Um `Pedido` possui uma estratégia de `Pagamento`.
-- `Boleto` implementa a interface `Pagamento`.
-- O `Administrador` é responsável por cadastrar e remover produtos e visualizar os pedidos do sistema.
-
----
-
-## Persistência — JPA + Hibernate + MySQL
-
-O programa agora guarda tudo em um banco **MySQL** (roda em container Docker/Podman),
-usando **JPA (Jakarta Persistence)** com o provedor **Hibernate**.
-
-- **Nenhum SQL puro no projeto**: o schema é criado e atualizado pelo Hibernate a
-  partir das anotações JPA (`hibernate.hbm2ddl.auto=update`) e todas as consultas
-  são **JPQL**, feitas pelos DAOs em `src/main/java/dao/`.
-- Documentação completa do mapeamento (diagrama ER, tabelas, colunas e
-  cardinalidades): [`docs/mapeamento-banco.md`](docs/mapeamento-banco.md).
-- Única mudança de modelagem: `Pagamento`, que era `interface`, virou **classe
-  abstrata `@Entity`** para poder ser persistida (o contrato
-  `processarPagamento(valor)` continua igual).
-
-### Estrutura
-
-```text
-src/main/java/
-├── App.java                  # menu do terminal (usa os DAOs)
-├── Entities/                 # entidades JPA (mapeadas)
-├── dao/                      # acesso a dados (JPQL, sem SQL)
-└── util/JPAUtil.java         # EntityManagerFactory
-src/main/resources/
-├── META-INF/persistence.xml  # conexao + propriedades do Hibernate
-docs/mapeamento-banco.md      # mapeamento banco <-> classes
-```
-
-### Como executar
+Na pasta do projeto:
 
 ```bash
-# 1) banco MySQL (imagem docker.io/library/mysql:8.4)
-docker compose up -d          # ou: podman-compose up -d
+docker compose up -d          # Podman: podman-compose up -d
+```
 
-# 2) compilar (o Hibernate cria as tabelas na 1a execução)
+Confira se o container ficou saudável:
+
+```bash
+docker compose ps             # STATUS deve ser "healthy"
+docker compose logs -f mysql  # opcional: acompanhar o boot do MySQL
+```
+
+O `docker-compose.yml` já cria o banco `loja_online`, expõe a porta `3306` e
+mantém os dados no volume `mysql-data`.
+
+---
+
+## 3. Compilar
+
+```bash
 mvn compile
+```
 
-# 3) rodar
+Na **primeira execução** o Hibernate cria todas as tabelas automaticamente a
+partir das anotações JPA (`hibernate.hbm2ddl.auto=update`) — nenhum script SQL
+precisa ser rodado à mão.
+
+---
+
+## 4. Executar
+
+```bash
 mvn exec:java
 ```
 
-> O Maven pode ser instalado com `sudo dnf install maven`.
 
-**Login inicial do administrador:** `admin@loja.com` / `123`
-(o seed roda só se o banco estiver vazio). Clientes se cadastram pelo próprio menu.
+### Login inicial
+
+| Perfil | Email | Senha |
+| --- | --- | --- |
+| Administrador | `admin@loja.com` | `123` |
+
+O seed (administrador + catálogo inicial: *Curso Java* e *Teclado Mecânico*)
+roda **apenas se o banco estiver vazio**.
+
+Clientes não têm cadastro prévio: escolha a opção `2`, informe um email novo e
+o menu pede nome, senha e endereço para cadastrar.
+
+---
+
+## 5. Comandos úteis
+
+```bash
+mvn compile                 # compilar
+mvn exec:java               # rodar a aplicação
+mvn package                 # gerar o jar em target/
+mvn clean                   # limpar a compilação
+
+docker compose up -d        # subir o MySQL
+docker compose down          # parar o MySQL (mantém os dados)
+docker compose down -v       # parar e APAGAR os dados do banco
+```
+
+---

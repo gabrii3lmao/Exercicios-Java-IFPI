@@ -12,6 +12,7 @@
         <class>Entities.Usuario</class>
         <class>Entities.Administrador</class>
         <class>Entities.Cliente</class>
+        <class>Entities.Endereco</class>
         <class>Entities.Interfaces.Produto</class>
         <class>Entities.ProdutoDigital</class>
         <class>Entities.ProdutoFisico</class>
